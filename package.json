@@ -1,0 +1,24 @@
+{
+  "name": "beefy-lrt",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.202",
+    "typescript": "^5.2.2",
+    "vite": "^5.1.0",
+    "vite-node": "^1.2.2"
+  },
+  "dependencies": {
+    "axios": "^1.6.7",
+    "blockchain-addressbook": "^0.46.28",
+    "decimal.js": "^10.4.3",
+    "lodash": "^4.17.21",
+    "viem": "^2.7.9"
+  }
+}
