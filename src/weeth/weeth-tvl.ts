@@ -13,16 +13,11 @@ import Decimal from "decimal.js";
 import { weethVaultIds } from "./config";
 
 
-runMain(async (argv) => {
-    const userAddress = argv[0];
-    if (!userAddress) {
-        throw new Error("User address is required");
-    }
-
+runMain(async () => {
     const vaultsByChain = await getVaultsByChain(weethVaultIds);
     const lpBreakDowns = await getLPBreakdownByVaultId(weethVaultIds);
     const calculationDetails: any[] = [];
-    const balanceByToken: { [key: string]: Decimal } = {};
+    const tokenTvl: { [key: string]: Decimal } = {};
 
     for (const [chainStr, vaults] of Object.entries(vaultsByChain)) {
         const chain = chainStr as BeefyChain;
@@ -34,7 +29,7 @@ runMain(async (argv) => {
                 abi: BeefyVaultV7Abi,
             };
 
-            const [rawPpfs, totalSupply, rawMooBalance] = await Promise.all([
+            const [rawPpfs, totalSupply] = await Promise.all([
                 client.readContract({
                     ...contract,
                     functionName: "getPricePerFullShare",
@@ -43,16 +38,11 @@ runMain(async (argv) => {
                     ...contract,
                     functionName: "totalSupply",
                 }),
-                client.readContract({
-                    ...contract,
-                    functionName: "balanceOf",
-                    args: [userAddress],
-                }),
             ]);
 
             // derive token balances
             const vaultDecimals = 18;
-            const mooBalance = getDecimalValue(rawMooBalance, vaultDecimals);
+            const mooBalance = getDecimalValue(totalSupply, vaultDecimals);
             const shareRate = ppfsToVaultSharesRate(
                 vaultDecimals,
                 vault.tokenDecimals,
@@ -71,7 +61,6 @@ runMain(async (argv) => {
                 vaultId: vault.id,
                 rawPpfs,
                 totalSupply,
-                rawMooBalance,
                 mooBalance: mooBalance.toString(),
                 shareRate: shareRate.toString(),
                 underlyingBalance: underlyingBalance.toString(),
@@ -83,18 +72,17 @@ runMain(async (argv) => {
                 if (balance.isZero()) {
                     continue;
                 }
-                if (!balanceByToken[token]) {
-                    balanceByToken[token] = new Decimal(0);
+                if (!tokenTvl[token]) {
+                    tokenTvl[token] = new Decimal(0);
                 }
 
-                balanceByToken[token] = balanceByToken[token].add(balance);
+                tokenTvl[token] = tokenTvl[token].add(balance);
             }
         }
     }
 
     //printData(calculationDetails);
     printData({
-        investor: userAddress,
-        balanceByToken,
+        tokenTvl,
     });
 });
